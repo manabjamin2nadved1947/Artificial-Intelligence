@@ -1,8 +1,7 @@
 //8-puzzle problem using A* algorithm
 
-//requirements
-//open list
-//closed list
+// INPUT: initial and goal of 8-puzzle
+//OUTPUT: optimal number of moves to reach initial to goal state and total number of moves
 
 //f-score = g-score + h-score
 //g-score = number of nodes traversed from source to current
@@ -33,20 +32,11 @@ g-score == g-score of parent +1;
 
 4. move the empty spaces in valid position
 
-5. how to get the path? using closed list
+5. how to get the path? using parent vector which takes pair(parent_id , move_pos)
 
 
 
 move e(i+1,j); move e(i-1,j); move e(i,j+1); move e(i,j-1);
-
-move_e(int r, int c){
-	//check if (r,c) is valid or not
-	if((r>=0 && r<sqrt(n+1)) && (c>=0 && c< sqrt(n+1)) ){
-		//check whether the state is in closed list or not;
-		//if not calculate f-score; 
-		//push the state in pq;
-	}
-}
 
 */
 
@@ -55,18 +45,19 @@ move_e(int r, int c){
 
 using namespace std;
 typedef vector< vector <int> >vii;
-typedef priority_queue < tuple<int, int,vii> >pq; //f-score, g-score, board_config
-
+typedef priority_queue < tuple<int, int,int, vii> >pq; //f-score, g-score, id, board_config
+//typedef vector<int> vi;
 
 int N=3;
 //vii open;
 vector<vii> closed;
-
+vector< pair<int,char> > parent; 
+int child_id=0;
 int h_score(vii a, vii b){
   int h=0;
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
-      if(a[i][j]!=b[i][j])
+      if(a[i][j]!=b[i][j] && a[i][j]!=0)
         h++;
     }
   }
@@ -85,7 +76,7 @@ bool check(vii a, vii b){
   return true;
 }
 
-void move(vii a,vii goal, int gs, pq &q, int x, int y,int r,int c){
+void move(vii a,vii goal, int gs,int id, pq &q, int x, int y,int r,int c,char move){
   //int r,c;
   //search for empty-pos
   /*for(int i = 0;i< N;i++){
@@ -128,8 +119,11 @@ void move(vii a,vii goal, int gs, pq &q, int x, int y,int r,int c){
         int g_score = gs+1;
         int hs = h_score(temp,goal);
         int f_score = g_score+hs;
+        child_id++ ;
+        auto itpos = parent.begin()+child_id;
+        parent.insert(itpos,{id,move});
         //push_back to q
-        q.push({-f_score,g_score,temp});
+        q.push({-f_score,g_score,child_id,temp});
         //cout<<"size"<<q.size()<<"\n";
 
     }
@@ -141,7 +135,7 @@ void move(vii a,vii goal, int gs, pq &q, int x, int y,int r,int c){
 
 int main(){
 	vii init_board(N), goal(N);
-	int input;
+	int input,id;
   	pq q;
   //init_board input
   	cout<<"enter initial board config\n";
@@ -162,23 +156,29 @@ int main(){
     }
   }
   cout<<"********moves to reach from initial to goal*******\n";
+
   int hs = h_score(init_board,goal);
-  q.push({-hs,0,init_board}); //for source, hs=fs and gs =0
-  
+  auto itpos = parent.begin();
+  parent.insert(itpos,{0,'_'});
+  //cout<<"yo";
+  q.push({-hs,0,0,init_board}); //for source, hs=fs id=0 and  gs =0
+  //cout<<"yo";
   while(!q.empty()){
   	//cout<<"enter in q\n";
     int fs = -get<0>(q.top()); //cout<<"fs in main "<<fs<<endl;
     int gs = get<1>(q.top());
-    vii current = get<2>(q.top());
+    id = get<2>(q.top());
+    vii current = get<3>(q.top());
     
 
     //testing 
-    for(int i = 0;i< N;i++){
+    
+    /*for(int i = 0;i< N;i++){
     for(int j=0;j<N;j++){
       
         cout<<current[i][j]<<" ";
     }
-    cout<<endl;}
+    cout<<endl;}*/
     
     //append current to closed list
     closed.push_back(current);
@@ -187,17 +187,18 @@ int main(){
     //cout<<"pop_size"<<q.size()<<endl;
     //check goal by h-score
     hs = fs-gs;
-    	cout<<"..........fs "<<fs<<endl;
-    	cout<<"..........gs "<<gs<<endl;
-    	cout<<"..........hs "<<hs<<endl;
-    	cout<<"****************************\n";
+    	//cout<<"..........fs "<<fs<<endl;
+    	//cout<<"..........gs "<<gs<<endl;
+    	//cout<<"..........hs "<<hs<<endl;
+    	//cout<<"****************************\n";
     if( hs == 0){
       //return path
       //cout<<"yo"<<endl;
       //return ;
     	
-      cout<<"closed list size "<<closed.size()<<"\n";
-      exit(0);
+      //cout<<"closed list size "<<closed.size()<<"\n";
+      //exit(0);
+      break;
     }
     
     //if not goal
@@ -214,263 +215,54 @@ int main(){
   }
   
   //move up
-  move(current,goal,gs,q,r-1,c,r,c);
-  move(current,goal,gs,q,r+1,c,r,c);
-  move(current,goal,gs,q,r,c-1,r,c);
-  move(current,goal,gs,q,r,c+1,r,c);
-    
+  //cout<<"yo";
+  move(current,goal,gs,id,q,r-1,c,r,c,'U');
+  move(current,goal,gs,id,q,r+1,c,r,c,'D');
+  move(current,goal,gs,id,q,r,c-1,r,c,'L');
+  move(current,goal,gs,id,q,r,c+1,r,c,'R');
+  
   }
-	
+  //print the parent vector
+  /*for(int i=0;i<parent.size();i++){
+    //cout<<"yo";
+    cout<<parent[i]<<endl;
+  }*/
+  int i=id;
+  vector<char> moves;
+  while(parent[i].first!=i){
+    //cout<<parent[i].second<<endl;
+    moves.push_back(parent[i].second);
+    i=parent[i].first;
+  }
+  for(int i=moves.size()-1;i>=0;i--)
+    cout<<moves[i]<<endl;
+  cout<<"total number of moves "<<moves.size()<<endl;
 }
 /*OUTPUT
 
 enter initial board config
+8 3 5
+4 1 6
+2 7 0
+enter goal board config
 1 2 3
 8 0 4
-7 6 5
-enter goal board config
-2 8 1
-0 4 3
 7 6 5
 ********moves to reach from initial to goal*******
-1 2 3
-8 0 4
-7 6 5
-..........fs 6
-..........gs 0
-..........hs 6
-****************************
-1 2 3
-8 4 0
-7 6 5
-..........fs 6
-..........gs 1
-..........hs 5
-****************************
-1 2 0
-8 4 3
-7 6 5
-..........fs 6
-..........gs 2
-..........hs 4
-****************************
-1 2 3
-0 8 4
-7 6 5
-..........fs 6
-..........gs 1
-..........hs 5
-****************************
-1 0 2
-8 4 3
-7 6 5
-..........fs 7
-..........gs 3
-..........hs 4
-****************************
-1 0 3
-8 2 4
-7 6 5
-..........fs 7
-..........gs 1
-..........hs 6
-****************************
-0 1 2
-8 4 3
-7 6 5
-..........fs 8
-..........gs 4
-..........hs 4
-****************************
-8 1 2
-0 4 3
-7 6 5
-..........fs 8
-..........gs 5
-..........hs 3
-****************************
-1 3 0
-8 2 4
-7 6 5
-..........fs 8
-..........gs 2
-..........hs 6
-****************************
-1 2 3
-8 4 5
-7 6 0
-..........fs 8
-..........gs 2
-..........hs 6
-****************************
-0 2 3
-1 8 4
-7 6 5
-..........fs 8
-..........gs 2
-..........hs 6
-****************************
-2 0 3
-1 8 4
-7 6 5
-..........fs 8
-..........gs 3
-..........hs 5
-****************************
-2 8 3
-1 0 4
-7 6 5
-..........fs 8
-..........gs 4
-..........hs 4
-****************************
-2 8 3
-1 4 0
-7 6 5
-..........fs 8
-..........gs 5
-..........hs 3
-****************************
-2 8 0
-1 4 3
-7 6 5
-..........fs 8
-..........gs 6
-..........hs 2
-****************************
-2 8 3
-0 1 4
-7 6 5
-..........fs 8
-..........gs 5
-..........hs 3
-****************************
-0 1 3
-8 2 4
-7 6 5
-..........fs 8
-..........gs 2
-..........hs 6
-****************************
-8 1 3
-0 2 4
-7 6 5
-..........fs 8
-..........gs 3
-..........hs 5
-****************************
-1 2 3
-8 6 4
-7 0 5
-..........fs 8
-..........gs 1
-..........hs 7
-****************************
-2 3 0
-1 8 4
-7 6 5
-..........fs 9
-..........gs 4
-..........hs 5
-****************************
-1 4 2
-8 0 3
-7 6 5
-..........fs 9
-..........gs 4
-..........hs 5
-****************************
-1 4 2
-0 8 3
-7 6 5
-..........fs 9
-..........gs 5
-..........hs 4
-****************************
-1 3 4
-8 2 0
-7 6 5
-..........fs 9
-..........gs 3
-..........hs 6
-****************************
-1 2 3
-7 8 4
-0 6 5
-..........fs 9
-..........gs 2
-..........hs 7
-****************************
-2 0 8
-1 4 3
-7 6 5
-..........fs 10
-..........gs 7
-..........hs 3
-****************************
-2 8 3
-1 4 5
-7 6 0
-..........fs 10
-..........gs 6
-..........hs 4
-****************************
-2 8 3
-1 6 4
-7 0 5
-..........fs 10
-..........gs 5
-..........hs 5
-****************************
-2 3 4
-1 8 0
-7 6 5
-..........fs 10
-..........gs 5
-..........hs 5
-****************************
-8 1 3
-2 0 4
-7 6 5
-..........fs 10
-..........gs 4
-..........hs 6
-****************************
-8 1 3
-2 4 0
-7 6 5
-..........fs 10
-..........gs 5
-..........hs 5
-****************************
-8 1 0
-2 4 3
-7 6 5
-..........fs 10
-..........gs 6
-..........hs 4
-****************************
-8 0 1
-2 4 3
-7 6 5
-..........fs 10
-..........gs 7
-..........hs 3
-****************************
-0 8 1
-2 4 3
-7 6 5
-..........fs 10
-..........gs 8
-..........hs 2
-****************************
-2 8 1
-0 4 3
-7 6 5
-..........fs 9
-..........gs 9
-..........hs 0
-****************************
-closed list size 34
+U
+U
+L
+D
+L
+D
+R
+R
+U
+L
+L
+U
+R
+D
+total number of moves 14
 
 */
